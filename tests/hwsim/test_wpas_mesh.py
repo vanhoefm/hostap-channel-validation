@@ -305,7 +305,7 @@ def _test_mesh_open_rssi_threshold(dev, apdev, value, expected):
                         ": " + str(mesh_rssi_threshold))
 
 def add_mesh_secure_net(dev, psk=True, pmf=False, pairwise=None, group=None,
-                        sae_password=False, sae_password_id=None):
+                        sae_password=False, sae_password_id=None, ocv=False):
     id = dev.add_network()
     dev.set_network(id, "mode", "5")
     dev.set_network_quoted(id, "ssid", "wpas-mesh-sec")
@@ -323,6 +323,8 @@ def add_mesh_secure_net(dev, psk=True, pmf=False, pairwise=None, group=None,
         dev.set_network(id, "pairwise", pairwise)
     if group:
         dev.set_network(id, "group", group)
+    if ocv:
+        dev.set_network(id, "ocv", "1")
     return id
 
 def test_wpas_mesh_secure(dev, apdev):
@@ -424,6 +426,105 @@ def test_mesh_secure_pmf(dev, apdev):
 
     dev[1].request("SET sae_groups ")
     id = add_mesh_secure_net(dev[1], pmf=True)
+    dev[1].mesh_group_add(id)
+
+    # Check for mesh joined
+    check_mesh_group_added(dev[0])
+    check_mesh_group_added(dev[1])
+
+    # Check for peer connected
+    check_mesh_peer_connected(dev[0])
+    check_mesh_peer_connected(dev[1])
+
+    # Test connectivity 0->1 and 1->0
+    hwsim_utils.test_connectivity(dev[0], dev[1])
+
+def test_mesh_secure_ocv(dev, apdev):
+    """Secure mesh network connectivity with OCV enabled"""
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].mesh_group_add(id)
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].mesh_group_add(id)
+
+    # Check for mesh joined
+    check_mesh_group_added(dev[0])
+    check_mesh_group_added(dev[1])
+
+    # Check for peer connected
+    check_mesh_peer_connected(dev[0])
+    check_mesh_peer_connected(dev[1])
+
+    # Test connectivity 0->1 and 1->0
+    hwsim_utils.test_connectivity(dev[0], dev[1])
+
+def test_mesh_secure_ocv_compat(dev, apdev):
+    """Secure mesh network where only one peer has OCV enabled"""
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].mesh_group_add(id)
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=False)
+    dev[1].mesh_group_add(id)
+
+    # Check for mesh joined
+    check_mesh_group_added(dev[0])
+    check_mesh_group_added(dev[1])
+
+    # Check for peer connected
+    check_mesh_peer_connected(dev[0])
+    check_mesh_peer_connected(dev[1])
+
+    # Test connectivity 0->1 and 1->0
+    hwsim_utils.test_connectivity(dev[0], dev[1])
+
+def test_mesh_secure_ocv_mix_legacy(dev, apdev):
+    """Mesh network with a VHT STA and a legacy STA under OCV"""
+    subprocess.call(['iw', 'reg', 'set', 'AZ'])
+
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].set_network(id, "frequency", "5200")
+    dev[0].set_network(id, "max_oper_chwidth", "2")
+    dev[0].mesh_group_add(id)
+
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].set_network(id, "frequency", "5200")
+    dev[1].set_network(id, "disable_vht", "1")
+    dev[1].set_network(id, "disable_ht40", "1")
+    dev[1].mesh_group_add(id)
+
+    # Check for mesh joined
+    check_mesh_group_added(dev[0])
+    check_mesh_group_added(dev[1])
+
+    # Check for peer connected
+    check_mesh_peer_connected(dev[0])
+    check_mesh_peer_connected(dev[1])
+
+    # Test connectivity 0->1 and 1->0
+    hwsim_utils.test_connectivity(dev[0], dev[1])
+
+def test_mesh_secure_ocv_mix_ht(dev, apdev):
+    """Mesh network with a VHT STA and a HT STA under OCV"""
+    subprocess.call(['iw', 'reg', 'set', 'AZ'])
+
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].set_network(id, "frequency", "5200")
+    dev[0].set_network(id, "max_oper_chwidth", "2")
+    dev[0].mesh_group_add(id)
+
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].set_network(id, "frequency", "5200")
+    dev[1].set_network(id, "disable_vht", "1")
     dev[1].mesh_group_add(id)
 
     # Check for mesh joined
