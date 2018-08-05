@@ -457,6 +457,13 @@ const u8 *  wpa_fils_validate_fils_session(struct wpa_state_machine *sm,
 int wpa_fils_validate_key_confirm(struct wpa_state_machine *sm, const u8 *ies,
 				  size_t ies_len);
 
+#ifdef CONFIG_OCV
+int get_tx_parameters(struct sta_info *sta, int ap_max_chanwidth,
+		      int ap_seg1_idx, int *bandwidth, int *seg1_idx);
+int get_sta_tx_parameters(struct wpa_state_machine *sm, int ap_max_chanwidth,
+			  int ap_seg1_idx, int *bandwidth, int *seg1_idx);
+#endif /* CONFIG_OCV */
+
 int wpa_auth_write_fte(struct wpa_authenticator *wpa_auth, int use_sha384,
 		       u8 *buf, size_t len);
 void wpa_auth_get_fils_aead_params(struct wpa_state_machine *sm,

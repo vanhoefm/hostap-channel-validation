@@ -2633,6 +2633,80 @@ u8 * hostapd_eid_assoc_fils_session(struct wpa_state_machine *sm, u8 *buf,
 
 #endif /* CONFIG_FILS */
 
+#ifdef CONFIG_OCV
+
+int get_tx_parameters(struct sta_info *sta, int ap_max_chanwidth,
+		      int ap_seg1_idx, int *bandwidth, int *seg1_idx)
+{
+	int ht_40mhz;
+	int vht_80p80;
+	int requested_bw;
+
+
+	ht_40mhz = 0;
+	if (sta->ht_capabilities)
+		ht_40mhz = !!(sta->ht_capabilities->ht_capabilities_info &
+			      HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET);
+
+	vht_80p80 = 0;
+	if (sta->vht_operation) {
+		struct ieee80211_vht_operation *oper = sta->vht_operation;
+
+		/**
+		 * If a VHT Operation element was present, use it to determine the
+		 * supported channel bandwidth.
+		 */
+		if (oper->vht_op_info_chwidth == 0)
+			requested_bw = ht_40mhz ? 40 : 20;
+		else if (oper->vht_op_info_chan_center_freq_seg1_idx == 0)
+			requested_bw = 80;
+		else {
+			requested_bw = 160;
+			vht_80p80 = oper->vht_op_info_chan_center_freq_seg1_idx != 0 &&
+				    abs((int)oper->vht_op_info_chan_center_freq_seg0_idx -
+					(int)oper->vht_op_info_chan_center_freq_seg1_idx) > 16;
+		}
+	} else if (sta->vht_capabilities) {
+		struct ieee80211_vht_capabilities *capab = sta->vht_capabilities;
+
+		/**
+		 * If only the VHT Capabilities element is present (e.g. for normal
+		 * clients), use it to determine the supported channel bandwidth.
+		 */
+		int vht_chanwidth = capab->vht_capabilities_info & VHT_CAP_SUPP_CHAN_WIDTH_MASK;
+		vht_80p80 = capab->vht_capabilities_info & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
+
+		/** TODO: Also take into account Extended NSS BW Support field */
+		requested_bw = vht_chanwidth ? 160 : 80;
+	} else {
+		requested_bw = ht_40mhz ? 40 : 20;
+	}
+
+	*bandwidth = requested_bw < ap_max_chanwidth ? requested_bw : ap_max_chanwidth;
+
+	*seg1_idx = 0;
+	if (ap_seg1_idx && vht_80p80)
+		*seg1_idx = ap_seg1_idx;
+
+	return 0;
+}
+
+int get_sta_tx_parameters(struct wpa_state_machine *sm, int ap_max_chanwidth,
+			  int ap_seg1_idx, int *bandwidth, int *seg1_idx)
+{
+	struct sta_info *sta;
+
+	sta = wpa_get_sta(sm->wpa_auth, sm->addr);
+	if (sta == NULL) {
+		wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_INFO, "Failed to get "
+				"STA info to validate received OCI in EAPOL-Key 2/4");
+		return -1;
+	}
+
+	return get_tx_parameters(sta, ap_max_chanwidth, ap_seg1_idx, bandwidth, seg1_idx);
+}
+
+#endif /* CONFIG_OCV */
 
 SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 {
