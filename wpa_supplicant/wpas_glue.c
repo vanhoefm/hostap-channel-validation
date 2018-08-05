@@ -517,6 +517,13 @@ static int wpa_supplicant_set_key(void *_wpa_s, enum wpa_alg alg,
 }
 
 
+static int wpa_supplicant_channel_info(void *_wpa_s, struct wpa_channel_info *ci)
+{
+	struct wpa_supplicant *wpa_s = _wpa_s;
+	return wpa_drv_channel_info(wpa_s, ci);
+}
+
+
 static int wpa_supplicant_mlme_setprotection(void *wpa_s, const u8 *addr,
 					     int protection_type,
 					     int key_type)
@@ -1233,6 +1240,7 @@ int wpa_supplicant_init_wpa(struct wpa_supplicant *wpa_s)
 	ctx->set_rekey_offload = wpa_supplicant_set_rekey_offload;
 	ctx->key_mgmt_set_pmk = wpa_supplicant_key_mgmt_set_pmk;
 	ctx->fils_hlp_rx = wpa_supplicant_fils_hlp_rx;
+	ctx->channel_info = wpa_supplicant_channel_info;
 
 	wpa_s->wpa = wpa_sm_init(ctx);
 	if (wpa_s->wpa == NULL) {

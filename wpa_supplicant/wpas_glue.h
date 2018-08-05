@@ -10,6 +10,7 @@
 #define WPAS_GLUE_H
 
 enum wpa_ctrl_req_type;
+struct wpa_channel_info;
 
 int wpa_supplicant_init_eapol(struct wpa_supplicant *wpa_s);
 int wpa_supplicant_init_wpa(struct wpa_supplicant *wpa_s);

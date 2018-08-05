@@ -198,6 +198,14 @@ static inline int wpa_sm_set_key(struct wpa_sm *sm, enum wpa_alg alg,
 				seq, seq_len, key, key_len);
 }
 
+static inline int wpa_sm_channel_info(struct wpa_sm *sm,
+				      struct wpa_channel_info *ci)
+{
+	WPA_ASSERT(sm->ctx->channel_info);
+	return sm->ctx->channel_info(sm->ctx->ctx, ci);
+}
+
+
 static inline void * wpa_sm_get_network_ctx(struct wpa_sm *sm)
 {
 	WPA_ASSERT(sm->ctx->get_network_ctx);
