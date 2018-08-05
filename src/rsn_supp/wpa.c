@@ -2847,6 +2847,8 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
 	case WPA_PARAM_MFP:
 		sm->mfp = value;
 		break;
+	case WPA_PARAM_OCV:
+		sm->ocv = value;
 	default:
 		break;
 	}
@@ -3800,6 +3802,8 @@ static int fils_ft_build_assoc_req_rsne(struct wpa_sm *sm, struct wpabuf *buf)
 	if (sm->mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC)
 		capab |= WPA_CAPABILITY_MFPC;
 #endif /* CONFIG_IEEE80211W */
+	if (sm->ocv)
+		capab |= WPA_CAPABILITY_OCVC;
 	wpabuf_put_le16(buf, capab);
 
 	/* PMKID Count */

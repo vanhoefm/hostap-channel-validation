@@ -42,6 +42,7 @@ struct mesh_conf {
 #define MESH_CONF_SEC_AMPE BIT(2)
 	unsigned int security;
 	enum mfp_options ieee80211w;
+	int ocv;
 	unsigned int pairwise_cipher;
 	unsigned int group_cipher;
 	unsigned int mgmt_group_cipher;
@@ -335,6 +336,9 @@ struct hostapd_bss_config {
 	/* dot11AssociationSAQueryRetryTimeout (in TUs) */
 	int assoc_sa_query_retry_timeout;
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_OCV
+	int ocv; /* Operating Channel Validation */
+#endif /* CONFIG_OCV */
 	enum {
 		PSK_RADIUS_IGNORED = 0,
 		PSK_RADIUS_ACCEPTED = 1,
