@@ -3729,9 +3729,7 @@ static int hostapd_sa_query_action(struct hostapd_data *hapd,
 		return 0;
 	}
 
-	ieee802_11_sa_query_action(hapd, mgmt->sa,
-				   mgmt->u.action.u.sa_query_resp.action,
-				   mgmt->u.action.u.sa_query_resp.trans_id);
+	ieee802_11_sa_query_action(hapd, mgmt, len);
 	return 1;
 }
 
