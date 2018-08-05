@@ -2051,6 +2051,7 @@ void sme_sched_obss_scan(struct wpa_supplicant *wpa_s, int enable)
 
 static const unsigned int sa_query_max_timeout = 1000;
 static const unsigned int sa_query_retry_timeout = 201;
+static const unsigned int sa_query_ch_switch_max_delay = 5000; /* in usec */
 
 static int sme_check_sa_query_timeout(struct wpa_supplicant *wpa_s)
 {
@@ -2194,6 +2195,27 @@ void sme_event_unprot_disconnect(struct wpa_supplicant *wpa_s, const u8 *sa,
 	wpa_dbg(wpa_s, MSG_DEBUG, "SME: Unprotected disconnect dropped - "
 		"possible AP/STA state mismatch - trigger SA Query");
 	sme_start_sa_query(wpa_s);
+}
+
+
+void sme_event_ch_switch(struct wpa_supplicant *wpa_s)
+{
+	unsigned int usec;
+	u32 _rand;
+
+	if (wpa_s->wpa_state != WPA_COMPLETED)
+		return;
+	if (!wpa_sm_ocv_enabled(wpa_s->wpa))
+		return;
+
+	wpa_dbg(wpa_s, MSG_DEBUG, "SME: Channel switch completed - "
+		"trigger new SA Query to verify new operating channel");
+	sme_stop_sa_query(wpa_s);
+
+	if (os_get_random((u8 *) &_rand, sizeof(_rand)) < 0)
+		_rand = os_random();
+	usec = _rand % (sa_query_ch_switch_max_delay + 1);
+	eloop_register_timeout(0, usec, sme_sa_query_timer, wpa_s, NULL);
 }
 
 
