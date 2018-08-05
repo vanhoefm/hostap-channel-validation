@@ -92,3 +92,77 @@ int ocv_insert_extended_oci(struct wpa_channel_info *ci, u8 *pos)
 	*pos++ = WLAN_EID_EXT_OCV_OCI;
 	return ocv_insert_oci(ci, &pos);
 }
+
+
+int ocv_verify_tx_params(const uint8_t *oci_ie, size_t oci_ie_len,
+		struct wpa_channel_info *ci, int tx_chanwidth, int tx_seg1_idx)
+{
+	struct oci_info oci;
+
+	if (!oci_ie) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: did not recieve mandatory OCI");
+		return -1;
+	} else if (oci_ie_len != 3) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: received OCI of unexpected length (%d)",
+			 (int)oci_ie_len);
+		return -1;
+	}
+
+	memset(&oci, 0, sizeof(oci));
+	oci.op_class = oci_ie[0];
+	oci.channel = oci_ie[1];
+	oci.seg1_idx = oci_ie[2];
+	if (ocv_derive_all_parameters(&oci) != 0) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: unable to interpret received OCI");
+		return -1;
+	}
+
+	/** Primary frequency used to send frames to STA must match the STA's */
+	if (ci->frequency != oci.freq) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: primary channel mismatch in received OCI "
+			 "(we use %d but receiver is using %d)", ci->frequency, oci.freq);
+		return -1;
+	}
+
+	/** Whe shouldn't transmit with a higher bandwidth than the STA supports */
+	if (tx_chanwidth > oci.chanwidth) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: channel bandwidth mismatch in received OCI "
+			 "(we use %d but receiver only supports %d)",
+			 tx_chanwidth, oci.chanwidth);
+		return -1;
+	}
+
+	/**
+	 * Secondary channel only needs be checked for 40 MHz the 2.4 GHz band.
+	 * In the 5 GHz band it's verified through the primary frequency. Note
+	 * that the field ci->sec_channel is only filled in when we use 40 MHz.
+	 */
+	if (tx_chanwidth == 40 && ci->frequency < 2500
+	    && ci->sec_channel != oci.sec_channel) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: secondary channel mismatch in received OCI "
+			 "(we use %d but receiver is using %d)",
+			 ci->sec_channel, oci.sec_channel);
+		return -1;
+	}
+
+	/**
+	 * When using a 160 or 80+80 MHz channel to transmit, verify that we use
+	 * the same segments as the receiver by comparing frequency segment 1.
+	 */
+	if ((ci->chanwidth == CHAN_WIDTH_160 || ci->chanwidth == CHAN_WIDTH_80P80)
+	    && tx_seg1_idx != oci.seg1_idx) {
+		snprintf(ocv_errorstr, sizeof(ocv_errorstr),
+			 "OCV failed: frequency segment 1 mismatch in received OCI "
+			 "(we use %d but receiver is using %d)",
+			 tx_seg1_idx, oci.seg1_idx);
+		return -1;
+	}
+
+	return 0;
+}
