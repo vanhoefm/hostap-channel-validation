@@ -775,6 +775,21 @@ static int hostapd_wpa_auth_send_oui(void *ctx, const u8 *dst, u8 oui_suffix,
 #endif /* CONFIG_ETH_P_OUI */
 }
 
+int hostapd_channel_info(void *ctx, struct wpa_channel_info *ci)
+{
+	struct hostapd_data *hapd = ctx;
+
+	if (hostapd_drv_channel_info(hapd, ci) != 0)
+		return -1;
+
+	return 0;
+}
+
+struct sta_info * hostapd_get_sta(void *ctx, const u8 *addr)
+{
+	struct hostapd_data *hapd = ctx;
+	return ap_get_sta(hapd, addr);
+}
 
 #ifdef CONFIG_IEEE80211R_AP
 
@@ -1202,6 +1217,8 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
 		.set_session_timeout = hostapd_wpa_auth_set_session_timeout,
 		.get_session_timeout = hostapd_wpa_auth_get_session_timeout,
 #endif /* CONFIG_IEEE80211R_AP */
+		.channel_info = hostapd_channel_info,
+		.get_sta = hostapd_get_sta
 	};
 	const u8 *wpa_ie;
 	size_t wpa_ie_len;

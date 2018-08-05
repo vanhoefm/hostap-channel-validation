@@ -22,12 +22,14 @@
 #include "crypto/sha384.h"
 #include "crypto/random.h"
 #include "eapol_auth/eapol_auth_sm.h"
+#include "drivers/driver.h"
 #include "ap_config.h"
 #include "ieee802_11.h"
 #include "wpa_auth.h"
 #include "pmksa_cache_auth.h"
 #include "wpa_auth_i.h"
 #include "wpa_auth_ie.h"
+#include "sta_info.h"
 
 #define STATE_MACHINE_DATA struct wpa_state_machine
 #define STATE_MACHINE_DEBUG_PREFIX "WPA"
@@ -237,6 +239,23 @@ static void wpa_sta_disconnect(struct wpa_authenticator *wpa_auth,
 	wpa_auth->cb->disconnect(wpa_auth->cb_ctx, addr, reason);
 }
 
+
+static int wpa_channel_info(struct wpa_authenticator *wpa_auth,
+			    struct wpa_channel_info *ci)
+{
+	if (wpa_auth->cb->channel_info == NULL)
+		return -1;
+	return wpa_auth->cb->channel_info(wpa_auth->cb_ctx, ci);
+}
+
+
+static struct sta_info * wpa_get_sta(struct wpa_authenticator *wpa_auth,
+				     const u8 *addr)
+{
+	if (wpa_auth->cb->get_sta == NULL)
+		return NULL;
+	return wpa_auth->cb->get_sta(wpa_auth->cb_ctx, addr);
+}
 
 static void wpa_rekey_gmk(void *eloop_ctx, void *timeout_ctx)
 {
