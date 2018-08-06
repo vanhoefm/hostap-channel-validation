@@ -247,6 +247,8 @@ int nl80211_get_link_signal(struct wpa_driver_nl80211_data *drv,
 			    struct wpa_signal_info *sig);
 int nl80211_get_link_noise(struct wpa_driver_nl80211_data *drv,
 			   struct wpa_signal_info *sig_change);
+int nl80211_get_channel_info(struct wpa_driver_nl80211_data *drv,
+			     struct wpa_channel_info *chan);
 int nl80211_get_wiphy_index(struct i802_bss *bss);
 int wpa_driver_nl80211_set_mode(struct i802_bss *bss,
 				enum nl80211_iftype nlmode);
