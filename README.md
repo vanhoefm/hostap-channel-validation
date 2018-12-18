@@ -1,3 +1,5 @@
+**Update: our patches have been merged with the official hostap development version!** Please see clone the repository git://w1.fi/hostap.git to test Operating Channel Validation (you can view a WWW interface of this repository [here](https://w1.fi/cgit)). Remeber to first enable OCV in the build `.config` file by uncommenting `CONFIG_OCV=y`.
+
 This repository contains a proof-of-concept implementation of [Operating Channel Validation (OCV)](https://papers.mathyvanhoef.com/wisec2018.pdf).
 
 Note that the branch `local_development` will have its history rewritten while the patches are being improved. The idea is that the final set of commits will be included on the official repository of `hostap`. This means that if you base your own code or project on the branch `local_development`, do not expect to easily merge new updates, as this will likely lead to merge conflicts.
